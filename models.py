@@ -27,8 +27,40 @@ class NaiveBayes(object):
                 1) a 2D numpy array of the attribute distributions
                 2) a 1D numpy array of the priors distribution
         """
+        # get attr distribution and the priors
+        # number instances over total number instances
+        # use Y train for priors, for attr distrib, use X train when y train = 0
+    
+        num_ones = np.sum(y_train == 1) #get number of 1s
+        prob = (num_ones / len(y_train)) #prob for label 1
 
-        # TODO
+        label_ones = X_train[y_train == 1] #index X_train -> gives data points with label = 1
+
+        # array of just the priors
+        arr = np.zeros([self.n_classes])
+        distribs = np.zeros([self.n_classes])
+
+        for i in self.n_classes:
+            y_at_class_i = np.count_nonzero(y_train == i) + 1
+            prior_prob_i = (y_at_class_i / len(y_train) + self.n_classes)
+            arr[i] = prior_prob_i
+
+            #calc attr distrib
+            attr_at_class_i = np.count_nonzero(X_train[i][y_train == i]) + 1
+            attr_distrib = ((attr_at_class_i) / len(X_train[i]) + len (X_train[i][y_train == i]))
+            distribs[i] = attr_distrib
+        self.attr_dist = distribs
+        self.label_priors = arr
+
+        #now, split training set
+        # count number of 1s in each feature, divide # by # data points in labe_ones , which gives conditional
+        #probabilites
+       # set the probabilities for the two member variables
+       # predict -> log loss
+       # add val to features (in slide)
+
+
+        pass
 
     def predict(self, inputs):
         """ Outputs a predicted label for each input in inputs.
@@ -41,7 +73,7 @@ class NaiveBayes(object):
             a 1D numpy array of predictions
         """
 
-        # TODO
+        # TODO 
 
     def accuracy(self, X_test, y_test):
         """ Outputs the accuracy of the trained model on a given dataset (data).
