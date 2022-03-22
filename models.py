@@ -31,25 +31,29 @@ class NaiveBayes(object):
         # number instances over total number instances
         # use Y train for priors, for attr distrib, use X train when y train = 0
     
-        num_ones = np.sum(y_train == 1) #get number of 1s
-        prob = (num_ones / len(y_train)) #prob for label 1
+        # num_ones = np.sum(y_train == 1) #get number of 1s
+        # prob = (num_ones / len(y_train)) #prob for label 1
 
-        label_ones = X_train[y_train == 1] #index X_train -> gives data points with label = 1
+        # label_ones = X_train[y_train == 1] #index X_train -> gives data points with label = 1
 
         # array of just the priors
         arr = np.zeros([self.n_classes])
-        distribs = np.zeros([self.n_classes])
-
+        distribs = np.zeros([self.n_classes][X_train.shape[1]])
+        j = 0
         for i in self.n_classes:
             y_at_class_i = np.count_nonzero(y_train == i) + 1
-            prior_prob_i = (y_at_class_i / len(y_train) + self.n_classes)
+            prior_prob_i = y_at_class_i / (len(y_train) + self.n_classes)
             arr[i] = prior_prob_i
 
             #calc attr distrib
-            attr_at_class_i = np.count_nonzero(X_train[i][y_train == i]) + 1
-            attr_distrib = ((attr_at_class_i) / len(X_train[i]) + len (X_train[i][y_train == i]))
-            distribs[i] = attr_distrib
-        self.attr_dist = distribs
+            attr_at_class_i = (X_train[y_train == i]) #checks each row for condition
+            attr_distr = (np.sum(attr_at_class_i, axis=0) + 1) / (y_at_class_i + (self.n_clases-1))
+            # attr_sum = np.sum(attr_at_class_i) + 1
+            # attr_distrib = ((attr_at_class_i) / len(X_train[i]) + len (X_train[i][y_train == i]))
+            distribs[i][j] = attr_distr
+            j+=1
+
+        self.attr_dist = distribs #should 2 by num_attr array
         self.label_priors = arr
 
         #now, split training set
@@ -72,8 +76,17 @@ class NaiveBayes(object):
         @return:
             a 1D numpy array of predictions
         """
-
-        # TODO 
+        joint = np.zeros(self.n_classes)
+        x = 0
+        for i,j in inputs:
+            joint[i] = np.cumprod(inputs[x]) * 1 #figure out how to get log loss
+            x+=1
+        posterior = joint/joint.sum 
+        
+        
+        
+        
+        pass
 
     def accuracy(self, X_test, y_test):
         """ Outputs the accuracy of the trained model on a given dataset (data).
@@ -84,8 +97,8 @@ class NaiveBayes(object):
         @return:
             a float number indicating accuracy (between 0 and 1)
         """
-
-        # TODO
+        predictions = self.predict(X_test)
+        return np.mean(predictions == y_test) #ratio of number of correct matches
 
     def print_fairness(self, X_test, y_test, x_sens):
         """ 
