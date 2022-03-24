@@ -1,4 +1,6 @@
+import attr
 import numpy as np
+from sklearn.covariance import log_likelihood
 
 class NaiveBayes(object):
     """ Bernoulli Naive Bayes model
@@ -37,34 +39,40 @@ class NaiveBayes(object):
         # label_ones = X_train[y_train == 1] #index X_train -> gives data points with label = 1
 
         # array of just the priors
-        arr = np.zeros([self.n_classes])
-        distribs = np.zeros([self.n_classes][X_train.shape[1]])
-        j = 0
-        for i in self.n_classes:
+        #print(X_train.shape)
+        # arr = np.zeros([self.n_classes])
+        class_freqs = np.zeros([self.n_classes])
+        distribs = np.zeros((self.n_classes, X_train.shape[1]))
+
+        for i in range(self.n_classes):
+
             y_at_class_i = np.count_nonzero(y_train == i) + 1
-            prior_prob_i = y_at_class_i / (len(y_train) + self.n_classes)
-            arr[i] = prior_prob_i
+            class_freqs[i] = y_at_class_i
+            
+            # prior_prob_i = y_at_class_i / (len(y_train) + self.n_classes)
+            # arr[i] = prior_prob_i
 
             #calc attr distrib
-            attr_at_class_i = (X_train[y_train == i]) #checks each row for condition
-            attr_distr = (np.sum(attr_at_class_i, axis=0) + 1) / (y_at_class_i + (self.n_clases-1))
-            # attr_sum = np.sum(attr_at_class_i) + 1
-            # attr_distrib = ((attr_at_class_i) / len(X_train[i]) + len (X_train[i][y_train == i]))
-            distribs[i][j] = attr_distr
-            j+=1
-
-        self.attr_dist = distribs #should 2 by num_attr array
-        self.label_priors = arr
-
-        #now, split training set
-        # count number of 1s in each feature, divide # by # data points in labe_ones , which gives conditional
-        #probabilites
-       # set the probabilities for the two member variables
-       # predict -> log loss
-       # add val to features (in slide)
+            index = np.argwhere(y_train == i) #index of class
+            attr_at_class_i = (X_train[index]) #checks each row for condition
+            distribs[i] = np.sum(attr_at_class_i, axis=0) #distribs means count (freq of attr)
 
 
-        pass
+
+            # attr_distr = (np.sum(attr_at_class_i, axis=0) + 1) / (y_at_class_i + (self.n_classes-1))
+            # # attr_sum = np.sum(attr_at_class_i) + 1
+            # # attr_distrib = ((attr_at_class_i) / len(X_train[i]) + len (X_train[i][y_train == i]))
+            # distribs[i] = attr_distr
+        distribs = np.transpose(distribs)
+        divisor = np.array([class_freqs,] * X_train.shape[1]) + 2 #elt y times each freq by # attrs
+
+        # attr_distr = (np.sum(attr_at_class_i, axis=0) + 1) / (y_at_class_i + (self.n_classes-1))
+        attr_distr = (distribs + 1) / divisor
+        # distribs = attr_distr
+        prior_distrib = (class_freqs + 1) / (len(y_train) + self.n_classes)
+        self.attr_dist = attr_distr #should 2 by num_attr array
+        self.label_priors = prior_distrib
+        return attr_distr,prior_distrib
 
     def predict(self, inputs):
         """ Outputs a predicted label for each input in inputs.
@@ -76,17 +84,24 @@ class NaiveBayes(object):
         @return:
             a 1D numpy array of predictions
         """
-        joint = np.zeros(self.n_classes)
-        x = 0
-        for i,j in inputs:
-            joint[i] = np.cumprod(inputs[x]) * 1 #figure out how to get log loss
-            x+=1
-        posterior = joint/joint.sum 
+        predictions = np.zeros(len(inputs))
+
+        for i in range(len(inputs)):
+            example = inputs[i].reshape((-1,1)) #gets example and makes column vector
+            zeros_flipped = np.where(example == 0, 1 - self.attr_dist, self.attr_dist) #checks for zeros -> returns array of booleans
+
+            # take into log space
+            log_probabilities = np.log(zeros_flipped)
+            log_probabilities = np.exp(log_probabilities.sum(axis=0))
+            log_likelihood = self.label_priors * log_probabilities #array of size num classes
+
+            #get the max -> max index of log probabilities, which is the class we return as prediction
+            maximum_index = np.argmax(log_likelihood)
+            predictions[i] = maximum_index
+            
+        return predictions
+        # posterior = joint/joint.sum  -> log likelihood
         
-        
-        
-        
-        pass
 
     def accuracy(self, X_test, y_test):
         """ Outputs the accuracy of the trained model on a given dataset (data).
