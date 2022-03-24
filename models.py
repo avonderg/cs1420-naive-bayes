@@ -1,4 +1,4 @@
-
+# import attr
 import numpy as np
 from sklearn.covariance import log_likelihood
 
@@ -46,7 +46,7 @@ class NaiveBayes(object):
 
         for i in range(self.n_classes):
 
-            y_at_class_i = np.count_nonzero(y_train == i) + 1
+            y_at_class_i = np.count_nonzero(y_train == i)
             class_freqs[i] = y_at_class_i
             
             # prior_prob_i = y_at_class_i / (len(y_train) + self.n_classes)
