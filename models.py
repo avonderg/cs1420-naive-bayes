@@ -1,4 +1,4 @@
-import attr
+
 import numpy as np
 from sklearn.covariance import log_likelihood
 
